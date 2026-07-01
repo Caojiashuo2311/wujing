@@ -1860,7 +1860,15 @@ function decTypeSection() {
 function decToggleRecording() {
   if (decIsRecording) { decStopRecording(); return; }
   
-  // Check for getUserMedia support with better error handling
+  // HTTPS/localhost is required for microphone access — check this FIRST
+  // (in insecure contexts, navigator.mediaDevices is undefined entirely)
+  const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (!isSecure && location.protocol !== 'file:') {
+    alert('录音功能需要 HTTPS 环境。\n当前为 HTTP 连接，浏览器禁止访问麦克风。\n\n请通过 HTTPS 访问本站，或在本机 localhost 使用。');
+    return;
+  }
+  
+  // Check for getUserMedia support
   let hasGetUserMedia = false;
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     hasGetUserMedia = true;
@@ -1870,13 +1878,6 @@ function decToggleRecording() {
   
   if (!hasGetUserMedia) {
     alert('浏览器不支持录音，请使用 Chrome 或 Edge。');
-    return;
-  }
-  
-  // Check if running on HTTPS or localhost
-  const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  if (!isSecure && location.protocol !== 'file:') {
-    alert('录音功能需要在 HTTPS 或 localhost 环境下运行。');
     return;
   }
   const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';

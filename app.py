@@ -357,4 +357,11 @@ def ws_speech(ws):
 # ===== Init DB on startup =====
 if __name__ == '__main__':
     init_database()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Auto-enable HTTPS if self-signed cert exists (needed for getUserMedia on remote access)
+    ssl_ctx = None
+    cert_path = '/etc/nginx/ssl/selfsigned.crt'
+    key_path = '/etc/nginx/ssl/selfsigned.key'
+    if os.path.exists(cert_path) and os.path.exists(key_path):
+        ssl_ctx = (cert_path, key_path)
+        print('[SSL] Serving HTTPS with self-signed cert')
+    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=ssl_ctx)

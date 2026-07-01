@@ -566,23 +566,25 @@ function startEditAnalysis() {
   let currentImages = [];
   
   // Check if custom data exists
-  const hasCustomData = custom.title || custom.content || custom.images;
+  const hasCustomData = custom.contentTitle || custom.title || custom.content || custom.images;
   
   if (hasCustomData) {
-    // Use custom data if available
-    currentTitle = custom.title || '';
+    // Use custom data if available (contentTitle for section heading, title for tab label)
+    currentTitle = custom.contentTitle || '';
     currentContent = custom.content || '';
     currentImages = custom.images ? [...custom.images] : [];
   } else {
-    // Use original data - show category title, not section title
+    // Use original data - show section title (not tab label) for content editing
     if (analysisTab === 'enemy') {
       const category = DATA.enemyInfo[analysisSubTab];
       if (category) {
-        currentTitle = category.label || '';
-        // Get content from first section if available
+        // Use section title for content heading, not the tab label
         if (category.sections && category.sections.length > 0) {
+          currentTitle = category.sections[0].title || category.label || '';
           currentContent = category.sections[0].content || '';
           currentImages = category.sections[0].image ? [category.sections[0].image] : [];
+        } else {
+          currentTitle = category.label || '';
         }
       }
     } else if (analysisTab === 'our') {
@@ -617,8 +619,8 @@ function startEditAnalysis() {
     </div>
     <div style="padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow-y:auto">
       <div style="display:flex;align-items:center;gap:8px">
-        <label style="color:#fff;font-size:0.85rem;min-width:40px">标题：</label>
-        <input id="editAnalysisTitle" value="${currentTitle}" style="flex:1;padding:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:#fff;font-size:0.9rem">
+        <label style="color:#fff;font-size:0.85rem;min-width:60px">内容标题：</label>
+        <input id="editAnalysisTitle" value="${currentTitle}" placeholder="内容区域显示的标题（不影响标签名称）" style="flex:1;padding:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:#fff;font-size:0.9rem">
       </div>
       <div style="display:flex;gap:8px;flex:1">
         <label style="color:#fff;font-size:0.85rem;min-width:40px;padding-top:10px">内容：</label>
@@ -678,10 +680,12 @@ function removeAnalysisImage(idx) {
 }
 
 function saveEditAnalysis() {
-  const title = document.getElementById('editAnalysisTitle').value;
+  const contentTitle = document.getElementById('editAnalysisTitle').value;
   const content = document.getElementById('editAnalysisContent').value;
   const key = `${analysisTab}_${analysisSubTab}`;
-  analysisCustomData[key] = { title, content, images: editAnalysisImages };
+  // Preserve existing tab title (set via "编辑名称"), only update content fields
+  const existing = analysisCustomData[key] || {};
+  analysisCustomData[key] = { ...existing, contentTitle, content, images: editAnalysisImages };
   localStorage.setItem('analysisCustomData', JSON.stringify(analysisCustomData));
   renderRightArea();
 }
@@ -889,7 +893,7 @@ function renderEnemyView(el) {
       </div>`;
   } else {
     sections = current.sections.map((s, i) => {
-      const title = customAnalysis.title || s.title;
+      const title = customAnalysis.contentTitle || s.title;
       const content = customAnalysis.content || s.content;
       const images = customAnalysis.images || [s.image];
       const image = images[0] || s.image;
@@ -948,8 +952,8 @@ function renderOurView(el) {
     return `<button class="tab-btn${(current.id===t.id)?' active':''}" onclick="switchAnalysisSubTab('${t.id}')">${label}</button>`;
   }).join('');
 
-  const hasCustom = !!(customAnalysis.title || customAnalysis.content || (customAnalysis.images && customAnalysis.images.length));
-  const displayTitle = customAnalysis.title || current.label.replace(/^[①-⑩]\s*/,'');
+  const hasCustom = !!(customAnalysis.contentTitle || customAnalysis.title || customAnalysis.content || (customAnalysis.images && customAnalysis.images.length));
+  const displayTitle = customAnalysis.contentTitle || current.label.replace(/^[①-⑩]\s*/,'');
   const displayContent = customAnalysis.content || current.content;
   const displayImages = (customAnalysis.images && customAnalysis.images.length)
     ? customAnalysis.images
@@ -1063,10 +1067,10 @@ function renderBattlefieldView(el) {
   const key = `${analysisTab}_${analysisSubTab}`;
   const customAnalysis = analysisCustomData[key] || {};
   const customImages = customAnalysis.images || [];
-  const hasCustom = !!(customAnalysis.title || customAnalysis.content || customImages.length);
+  const hasCustom = !!(customAnalysis.contentTitle || customAnalysis.title || customAnalysis.content || customImages.length);
   const displayImage = customImages[0] || (useCustom && userImage ? userImage : current.image);
   const displayContent = customAnalysis.content || (useCustom ? userContent : current.content);
-  const displayTitle = customAnalysis.title || (useCustom ? '情况通报' : current.label);
+  const displayTitle = customAnalysis.contentTitle || (useCustom ? '情况通报' : current.label);
 
   let tabBtns = items.map(t => {
     const tCustom = analysisCustomData[`${analysisTab}_${t.id}`] || {};

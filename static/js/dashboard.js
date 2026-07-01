@@ -9,6 +9,7 @@ let customModules = JSON.parse(localStorage.getItem('customAnalysisModules') || 
 let customData = JSON.parse(localStorage.getItem('targetCustomData') || '{}');
 let analysisCustomData = JSON.parse(localStorage.getItem('analysisCustomData') || '{}');
 let editAnalysisImages = [];
+let editAnalysisSections = [];
 let typingTimer = null;
 
 // ===== Init =====
@@ -559,7 +560,34 @@ function startEditAnalysis() {
   const key = `${analysisTab}_${analysisSubTab}`;
   const custom = analysisCustomData[key] || {};
   const el = document.getElementById('analysisView');
-  
+
+  // Enemy view has multiple sections — edit each section independently
+  if (analysisTab === 'enemy') {
+    const category = DATA.enemyInfo[analysisSubTab];
+    const baseSections = (category && category.sections) ? category.sections : [];
+    editAnalysisSections = baseSections.map((s, i) => {
+      const cs = (custom.sections && custom.sections[i]) || {};
+      return {
+        title: (cs.title != null && cs.title !== '') ? cs.title : (s.title || ''),
+        content: stripHtml((cs.content != null && cs.content !== '') ? cs.content : (s.content || '')),
+        images: (cs.images && cs.images.length) ? [...cs.images] : (s.image ? [s.image] : []),
+      };
+    });
+    el.innerHTML = `
+      <div class="analysis-border"></div>
+      <div class="target-detail-header">
+        <h3>编辑分析内容</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn-blue" onclick="saveEditAnalysis()" style="padding:6px 16px;border-radius:4px;background:#1976d2;color:#fff;font-weight:bold;cursor:pointer;border:none">保存</button>
+          <button class="btn-military" onclick="renderRightArea()" style="padding:6px 16px;border-radius:4px;background:#555;color:#fff;cursor:pointer;border:none">取消</button>
+        </div>
+      </div>
+      <div id="editSectionsContainer" style="padding:16px;display:flex;flex-direction:column;gap:20px;flex:1;overflow-y:auto"></div>
+    `;
+    renderEditSections();
+    return;
+  }
+
   // Get current content from original data or custom data
   let currentTitle = '';
   let currentContent = '';
@@ -575,19 +603,7 @@ function startEditAnalysis() {
     currentImages = custom.images ? [...custom.images] : [];
   } else {
     // Use original data - show section title (not tab label) for content editing
-    if (analysisTab === 'enemy') {
-      const category = DATA.enemyInfo[analysisSubTab];
-      if (category) {
-        // Use section title for content heading, not the tab label
-        if (category.sections && category.sections.length > 0) {
-          currentTitle = category.sections[0].title || category.label || '';
-          currentContent = category.sections[0].content || '';
-          currentImages = category.sections[0].image ? [category.sections[0].image] : [];
-        } else {
-          currentTitle = category.label || '';
-        }
-      }
-    } else if (analysisTab === 'our') {
+    if (analysisTab === 'our') {
       const item = DATA.ourInfo[analysisSubTab];
       if (item) {
         currentTitle = item.label || '';
@@ -635,6 +651,64 @@ function startEditAnalysis() {
   renderEditAnalysisImages();
 }
 
+// ===== Multi-section editor (enemy view) =====
+function renderEditSections() {
+  const container = document.getElementById('editSectionsContainer');
+  if (!container) return;
+  container.innerHTML = editAnalysisSections.map((sec, i) => `
+    <div style="border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,0.03)">
+      <div style="color:#ffd700;font-weight:bold;font-size:0.9rem">小节 ${i + 1}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="color:#fff;font-size:0.85rem;min-width:60px">标题：</label>
+        <input id="editSecTitle_${i}" value="${(sec.title || '').replace(/"/g, '&quot;')}" oninput="editAnalysisSections[${i}].title=this.value" style="flex:1;padding:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:#fff;font-size:0.9rem">
+      </div>
+      <div style="display:flex;gap:8px">
+        <label style="color:#fff;font-size:0.85rem;min-width:60px;padding-top:10px">内容：</label>
+        <textarea id="editSecContent_${i}" oninput="editAnalysisSections[${i}].content=this.value" style="flex:1;min-height:120px;padding:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:#fff;font-size:0.9rem;resize:vertical">${sec.content || ''}</textarea>
+      </div>
+      <div>
+        <label style="color:#fff;font-size:0.85rem">图片（点击替换或添加）：</label>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          ${(sec.images || []).map((img, j) => `
+            <div style="position:relative;width:80px;height:80px;border:2px solid rgba(255,255,255,0.3);border-radius:4px;overflow:hidden;cursor:pointer">
+              <img src="${img}" style="width:100%;height:100%;object-fit:cover">
+              <label style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.6rem;padding:2px 4px;border-radius:2px;cursor:pointer">替换
+                <input type="file" accept="image/*" style="display:none" onchange="replaceAnalysisSectionImage(this,${i},${j})">
+              </label>
+              <button style="position:absolute;top:2px;right:2px;background:rgba(255,0,0,0.7);color:#fff;border:none;border-radius:2px;width:16px;height:16px;padding:0;cursor:pointer;font-size:0.7rem" onclick="removeAnalysisSectionImage(${i},${j})">×</button>
+            </div>
+          `).join('')}
+          <label style="cursor:pointer;width:80px;height:80px;border:2px dashed rgba(255,255,255,0.3);border-radius:4px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:2rem">
+            +
+            <input type="file" accept="image/*" style="display:none" onchange="addAnalysisSectionImage(this,${i})">
+          </label>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function replaceAnalysisSectionImage(input, secIdx, imgIdx) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => { editAnalysisSections[secIdx].images[imgIdx] = e.target.result; renderEditSections(); };
+  reader.readAsDataURL(file);
+}
+
+function addAnalysisSectionImage(input, secIdx) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => { editAnalysisSections[secIdx].images.push(e.target.result); renderEditSections(); };
+  reader.readAsDataURL(file);
+}
+
+function removeAnalysisSectionImage(secIdx, imgIdx) {
+  editAnalysisSections[secIdx].images.splice(imgIdx, 1);
+  renderEditSections();
+}
+
 function renderEditAnalysisImages() {
   const row = document.getElementById('editAnalysisImagesRow');
   row.innerHTML = editAnalysisImages.map((img, i) => `
@@ -680,11 +754,25 @@ function removeAnalysisImage(idx) {
 }
 
 function saveEditAnalysis() {
+  const key = `${analysisTab}_${analysisSubTab}`;
+  const existing = analysisCustomData[key] || {};
+
+  // Enemy view: save each section independently
+  if (analysisTab === 'enemy') {
+    const sections = editAnalysisSections.map((sec, i) => ({
+      title: (document.getElementById(`editSecTitle_${i}`) || {}).value ?? sec.title,
+      content: (document.getElementById(`editSecContent_${i}`) || {}).value ?? sec.content,
+      images: sec.images,
+    }));
+    analysisCustomData[key] = { ...existing, sections };
+    localStorage.setItem('analysisCustomData', JSON.stringify(analysisCustomData));
+    renderRightArea();
+    return;
+  }
+
   const contentTitle = document.getElementById('editAnalysisTitle').value;
   const content = document.getElementById('editAnalysisContent').value;
-  const key = `${analysisTab}_${analysisSubTab}`;
   // Preserve existing tab title (set via "编辑名称"), only update content fields
-  const existing = analysisCustomData[key] || {};
   analysisCustomData[key] = { ...existing, contentTitle, content, images: editAnalysisImages };
   localStorage.setItem('analysisCustomData', JSON.stringify(analysisCustomData));
   renderRightArea();
@@ -893,9 +981,10 @@ function renderEnemyView(el) {
       </div>`;
   } else {
     sections = current.sections.map((s, i) => {
-      const title = customAnalysis.contentTitle || s.title;
-      const content = customAnalysis.content || s.content;
-      const images = customAnalysis.images || [s.image];
+      const cs = (customAnalysis.sections && customAnalysis.sections[i]) || {};
+      const title = (cs.title != null && cs.title !== '') ? cs.title : s.title;
+      const content = (cs.content != null && cs.content !== '') ? cs.content : s.content;
+      const images = (cs.images && cs.images.length) ? cs.images : [s.image];
       const image = images[0] || s.image;
       return `
       <div style="flex:1 1 0;display:flex;min-height:0;overflow:hidden;border-bottom:2px solid rgba(255,255,255,0.15);">

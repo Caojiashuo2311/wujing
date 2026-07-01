@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - 武警六盘水支队联合战斗作战筹划平台</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="login-page" style="background-image:url('/static/images/slide1_img2.png')">
+    <div class="login-overlay"></div>
+    <div class="login-box">
+      <div class="login-badge">
+        <img src="/static/images/slide1_img1.png" alt="武警徽章" style="filter:drop-shadow(0 0 15px rgba(255,215,0,0.4))">
+        <h1>武警六盘水支队联合战斗作战筹划平台</h1>
+      </div>
+      <form class="login-form" id="loginForm">
+        <div class="login-field">
+          <label>账号：</label>
+          <input type="text" id="username" autocomplete="off" value="WJLPSZHD">
+        </div>
+        <div class="login-field">
+          <label>密码：</label>
+          <input type="password" id="password" autocomplete="off" value="WJLPSZHD">
+        </div>
+        <div class="login-field">
+          <label>口令：</label>
+          <input type="text" id="code" autocomplete="off">
+        </div>
+        <div id="error" class="login-error hidden"></div>
+        <div class="login-buttons">
+          <button type="submit" class="btn-load" id="submitBtn">加　载</button>
+          <button type="button" class="btn-exit" id="exitBtn">退　出</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+    const form = document.getElementById('loginForm');
+    const errorEl = document.getElementById('error');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.classList.add('hidden');
+      const username = document.getElementById('username').value.toUpperCase();
+      const password = document.getElementById('password').value;
+      const code = document.getElementById('code').value;
+      if (!username || !password) { errorEl.textContent='请输入账号和密码'; errorEl.classList.remove('hidden'); return; }
+      if (code !== '作风优良') { errorEl.textContent='口令错误'; errorEl.classList.remove('hidden'); return; }
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true; btn.textContent = '加载中...';
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({username, password})
+        });
+        const data = await res.json();
+        if (data.success) { window.location.href = '/boot'; }
+        else { errorEl.textContent = data.error || '登录失败'; errorEl.classList.remove('hidden'); }
+      } catch { errorEl.textContent = '网络错误'; errorEl.classList.remove('hidden'); }
+      finally { btn.disabled = false; btn.textContent = '加　载'; }
+    });
+    document.getElementById('exitBtn').addEventListener('click', () => {
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('code').value = '';
+      errorEl.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>

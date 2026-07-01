@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统管理 - 武警六盘水支队</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>body{overflow:auto}</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-title"><img src="/static/images/icons/wj_badge.png"><h1>武警六盘水支队联合战斗作战筹划平台</h1></div>
+    <div class="header-right">
+      <div class="info"><span class="label">操作员：</span><span class="value" id="usernameDisplay"></span></div>
+      <div style="margin-left:16px;display:flex;gap:4px">
+        <button class="icon-btn" onclick="location.href='/dashboard'"><img src="/static/images/icons/icon_home.png"></button>
+        <button class="icon-btn" onclick="logout()"><img src="/static/images/icons/icon_logout.png"></button>
+      </div>
+    </div>
+  </div>
+  <div class="main" style="overflow:auto">
+    <div class="sidebar">
+      <div class="sidebar-header"><span>功能导航</span></div>
+      <div class="sidebar-nav" style="padding:8px 12px">
+        <button class="nav-btn" onclick="location.href='/dashboard'"><img src="/static/images/icons/icon_home.png"><span>返回主页</span></button>
+        <button class="nav-btn" style="border:2px solid rgba(0,229,255,0.5)"><img src="/static/images/icons/icon_apps.png"><span>系统管理</span></button>
+      </div>
+    </div>
+    <div class="page-content" style="flex:1">
+      <div class="page-header">
+        <h2>用户管理</h2>
+        <div class="actions">
+          <button class="btn-blue" onclick="showAddUser()">新增用户</button>
+        </div>
+      </div>
+
+      <!-- Add user form -->
+      <div id="addUserForm" class="hidden" style="display:none;gap:8px;align-items:center;padding:12px;background:rgba(8,12,24,0.8);border:1px solid rgba(0,170,255,0.2);border-radius:8px;margin-bottom:16px">
+        <input id="newUsername" placeholder="用户名" style="padding:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);border-radius:4px;color:#fff;font-size:0.85rem">
+        <input id="newPassword" type="password" placeholder="密码" style="padding:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);border-radius:4px;color:#fff;font-size:0.85rem">
+        <button class="btn-blue" onclick="createUser()">创建</button>
+        <button class="btn-military" onclick="hideAddUser()">取消</button>
+      </div>
+
+      <!-- User table -->
+      <div style="flex:1;overflow:auto">
+        <table class="admin-table">
+          <thead><tr><th>ID</th><th>用户名</th><th>角色</th><th>创建时间</th><th>操作</th></tr></thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch('/api/me');
+      const d = await res.json();
+      if (d.user) document.getElementById('usernameDisplay').textContent = d.user.username;
+      else { location.href='/login'; return; }
+    } catch { location.href='/login'; return; }
+    loadUsers();
+  });
+
+  async function loadUsers() {
+    const res = await fetch('/api/users');
+    if (res.status === 403) {
+      document.querySelector('.page-content').innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center"><p style="font-size:1.2rem;color:#ff4444;font-weight:bold">权限不足，仅管理员可访问此页面</p></div>';
+      return;
+    }
+    const data = await res.json();
+    if (!data.users) return;
+    const tbody = document.getElementById('userTableBody');
+    tbody.innerHTML = data.users.map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td>${u.username}</td>
+        <td>${u.role === 'admin' ? '管理员' : '普通用户'}</td>
+        <td>${u.created_at || ''}</td>
+        <td>${u.role !== 'admin' ? `<button class="btn-red" style="padding:4px 12px;font-size:0.75rem" onclick="deleteUser(${u.id})">删除</button>` : '-'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function showAddUser() {
+    const form = document.getElementById('addUserForm');
+    form.classList.remove('hidden');
+    form.style.display = 'flex';
+  }
+  function hideAddUser() {
+    const form = document.getElementById('addUserForm');
+    form.classList.add('hidden');
+    form.style.display = 'none';
+  }
+
+  async function createUser() {
+    const username = document.getElementById('newUsername').value.trim();
+    const password = document.getElementById('newPassword').value.trim();
+    if (!username || !password) { alert('请输入用户名和密码'); return; }
+    const res = await fetch('/api/users', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username, password})
+    });
+    const data = await res.json();
+    if (data.success) { hideAddUser(); loadUsers(); document.getElementById('newUsername').value=''; document.getElementById('newPassword').value=''; }
+    else alert(data.error || '创建失败');
+  }
+
+  async function deleteUser(id) {
+    if (!confirm('确定删除该用户？')) return;
+    const res = await fetch(`/api/users?id=${id}`, {method:'DELETE'});
+    const data = await res.json();
+    if (data.success) loadUsers();
+    else alert(data.error || '删除失败');
+  }
+
+  async function logout() { await fetch('/api/logout',{method:'POST'}); localStorage.clear(); location.href='/login'; }
+</script>
+</body>
+</html>

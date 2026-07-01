@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统加载中 - 武警六盘水支队</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="boot-page">
+    <div class="bg"><img src="/static/images/slide9_img1.jpeg" alt=""></div>
+    <div class="boot-content">
+      <img src="/static/images/slide1_img1.png" alt="武警徽章" class="badge" style="filter:drop-shadow(0 0 20px rgba(255,215,0,0.5))">
+      <h1>武警六盘水支队</h1>
+      <h2>联合战斗作战筹划平台</h2>
+      <div class="loading-text" id="loadingText">正在验证您的账户，请稍候……</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+  </div>
+  <script>
+    const stages = [
+      {text:'正在验证您的账户，请稍候……', duration:2000},
+      {text:'程序正在加载，请耐心等待 …', duration:2500},
+      {text:'程序正在加载，请耐心等待 …', duration:2500},
+      {text:'程序加载完毕...', duration:1500},
+    ];
+    let currentStage=0, startTime=Date.now();
+    const textEl=document.getElementById('loadingText'), fillEl=document.getElementById('progressFill');
+    function tick(){
+      const elapsed=Date.now()-startTime;
+      const dur=stages[currentStage].duration;
+      const sp=Math.min(elapsed/dur,1);
+      const total=((currentStage+sp)/stages.length)*100;
+      fillEl.style.width=Math.round(total)+'%';
+      if(elapsed>=dur){
+        currentStage++;
+        if(currentStage>=stages.length){ fillEl.style.width='100%'; setTimeout(()=>window.location.href='/dashboard',800); return; }
+        textEl.textContent=stages[currentStage].text;
+        startTime=Date.now();
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

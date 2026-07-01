@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+venv/
+.env
+
+# Vosk model (large binary, download separately)
+vosk-model-small-cn-0.22/
+vosk-model-small-cn-0.22.zip
+vosk-model/
+
+# Uploads
+static/uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store

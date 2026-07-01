@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>情况输入 - 武警六盘水支队</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .sit-page { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background:linear-gradient(135deg, #0d47a1 0%, #1565c0 25%, #1976d2 50%, #1e88e5 75%, #0d47a1 100%); }
+    .sit-section { display:flex; flex-direction:column; align-items:center; gap:16px; margin-bottom:24px; }
+    .sit-label { display:flex; align-items:center; gap:8px; align-self:flex-start; margin-left:0; }
+    .sit-label .icon { width:32px; height:32px; border-radius:6px; background:#ff9800;
+      display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold; font-size:1.1rem; }
+    .sit-label .text { font-size:1.3rem; font-weight:bold; color:#fff; background:linear-gradient(90deg,#ff9800,#f06292);
+      padding:10px 28px; border-radius:6px; letter-spacing:4px; }
+    .sit-content { display:flex; align-items:flex-start; gap:20px; }
+    .sit-textarea { width:480px; min-height:180px; border-radius:10px; padding:20px; font-size:1.05rem; line-height:1.9;
+      border:1px solid #ddd; resize:vertical; background:#fff; color:#333; }
+    .sit-thumb { width:140px; height:180px; border:2px dashed #aaa; border-radius:6px; background:rgba(255,255,255,0.1);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; overflow:hidden; }
+    .sit-thumb img { max-width:100%; max-height:100%; object-fit:cover; }
+    .sit-thumb-text { font-size:0.85rem; color:#aaa; text-align:center; }
+    .sit-btn { display:flex; align-items:center; gap:10px; padding:10px 32px; border-radius:20px; font-size:1.05rem; font-weight:bold;
+      background:linear-gradient(180deg,#f5f5f5,#e0e0e0); color:#555; border:1px solid #ccc;
+      box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; position:relative; z-index:10; }
+    .sit-btn:hover { background:linear-gradient(180deg,#e0e0e0,#ccc); transform:scale(1.02); }
+    .sit-btn:active { transform:scale(0.98); }
+    .sit-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; background:linear-gradient(180deg,#ccc,#bbb); }
+    .sit-btn:disabled:hover { transform:none; background:linear-gradient(180deg,#ccc,#bbb); }
+    .sit-btn .dot { width:12px; height:12px; border-radius:50%; background:#333; }
+    .sit-btn span { letter-spacing:4px; }
+    .sit-upload-row { display:flex; align-items:center; gap:20px; }
+    .sit-upload-thumb { width:90px; height:75px; border:2px dashed #aaa; border-radius:6px; background:rgba(255,255,255,0.1);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; }
+    .sit-upload-thumb-text { font-size:0.75rem; color:#aaa; text-align:center; }
+    .sit-upload-input { width:380px; padding:14px 20px; border-radius:8px; border:1px solid #ddd; background:#fff; color:#888;
+      font-size:1.05rem; text-align:center; cursor:pointer; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-title"><img src="/static/images/icons/wj_badge.png"><h1>武警六盘水支队联合战斗作战筹划平台</h1></div>
+    <div class="header-right">
+      <button class="icon-btn" title="返回" onclick="location.href='/dashboard'"><img src="/static/images/icons/icon_logout.png"></button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="sit-page">
+      <!-- 基本情况 -->
+      <div class="sit-section">
+        <div class="sit-label">
+          <div class="icon">i</div>
+          <div class="text">基本情况</div>
+        </div>
+        <div class="sit-content">
+          <div class="sit-thumb" id="photoThumb" onclick="document.getElementById('photoInput').click()">
+            <div class="sit-thumb-text">点击上传<br>图片</div>
+          </div>
+          <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+          <textarea class="sit-textarea" id="situationText" placeholder="请输入" oninput="checkSituationReady()"></textarea>
+        </div>
+        <button type="button" class="sit-btn" id="situationStartBtn" onclick="saveSituation()" disabled>
+          <div class="dot"></div>
+          <span>开 始</span>
+        </button>
+      </div>
+
+      <!-- 附件上传 -->
+      <div class="sit-section">
+        <div class="sit-label">
+          <div class="icon">i</div>
+          <div class="text">附件上传</div>
+        </div>
+        <div class="sit-upload-row">
+          <div class="sit-upload-thumb" onclick="document.getElementById('fileInput').click()">
+            <div class="sit-upload-thumb-text" id="uploadThumbText">点击上传图片</div>
+            <div id="imagePreview"></div>
+          </div>
+          <div class="sit-upload-input" onclick="document.getElementById('fileInput').click()" style="cursor:pointer">
+            从本地文件中选择
+          </div>
+          <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="previewImage(this)">
+        </div>
+        <button type="button" class="sit-btn" id="uploadStartBtn" onclick="uploadFile()" disabled>
+          <div class="dot"></div>
+          <span>开 始</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/static/js/data.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch('/api/me');
+      const d = await res.json();
+      if (!d.user) { location.href='/login'; return; }
+    } catch { location.href='/login'; return; }
+    document.getElementById('situationText').value = DATA.situationText;
+  });
+
+  let uploadedPhotoBase64 = null;
+
+  function saveSituation() {
+    const text = document.getElementById('situationText').value;
+    localStorage.setItem('situationText', text);
+    // 使用 data.js 中的关键词库
+    const keywordMap = DATA.keywordMap;
+    let matchedTab = null, matchedSub = null;
+    for (const item of keywordMap) {
+      for (const kw of item.kws) {
+        if (text.includes(kw)) { matchedTab = item.tab; matchedSub = item.sub; break; }
+      }
+      if (matchedTab) break;
+    }
+    if (matchedTab) {
+      localStorage.setItem('autoAnalysisTab', matchedTab);
+      localStorage.setItem('autoAnalysisSubTab', matchedSub);
+      // Save user content + image for replacing matched section
+      localStorage.setItem('userSituationContent', text);
+      localStorage.setItem('userSituationTargetSub', matchedSub);
+      if (uploadedPhotoBase64) {
+        localStorage.setItem('userSituationImage', uploadedPhotoBase64);
+      } else {
+        localStorage.removeItem('userSituationImage');
+      }
+    }
+    location.href = '/dashboard';
+  }
+
+  function previewPhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      uploadedPhotoBase64 = e.target.result;
+      const thumb = document.getElementById('photoThumb');
+      thumb.innerHTML = `<img src="${e.target.result}">`;
+      checkSituationReady();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function previewImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('uploadThumbText').style.display = 'none';
+      document.getElementById('imagePreview').innerHTML = `<img src="${e.target.result}" style="max-width:56px;max-height:46px;object-fit:cover">`;
+      document.getElementById('uploadStartBtn').disabled = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadFile() {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files || !fileInput.files[0]) {
+      alert('请先选择要上传的文件');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        alert('文件上传成功');
+        location.href = '/dashboard';
+      } else {
+        alert('上传失败：' + (data.error || '未知错误'));
+      }
+    } catch(e) {
+      alert('上传失败：' + e.message);
+    }
+  }
+
+  function checkSituationReady() {
+    const hasText = document.getElementById('situationText').value.trim().length > 0;
+    const hasImage = !!uploadedPhotoBase64;
+    document.getElementById('situationStartBtn').disabled = !(hasText && hasImage);
+  }
+
+  async function logout() { await fetch('/api/logout',{method:'POST'}); localStorage.clear(); location.href='/login'; }
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>武警六盘水支队联合战斗作战筹划平台</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<div class="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title">
+      <img src="/static/images/icons/wj_badge.png" alt="">
+      <h1>武警六盘水支队联合战斗作战筹划平台</h1>
+      <span class="version">v3.2.1</span>
+    </div>
+    <div class="header-right">
+      <div class="info"><span class="label">操作员：</span><span class="value" id="usernameDisplay"></span></div>
+      <div class="info" style="margin-left:16px"><span class="label">时间：</span><span class="value" id="timeDisplay"></span></div>
+      <div style="margin-left:16px;display:flex;gap:4px">
+        <button class="icon-btn" title="帮助"><span style="font-size:0.8rem">❓</span><span style="font-size:0.75rem;color:#fff">帮助</span></button>
+        <button class="icon-btn" title="配置"><span style="font-size:0.8rem">⚙</span><span style="font-size:0.75rem;color:#fff">配置</span></button>
+        <button class="icon-btn" title="版本更新"><img src="/static/images/icons/icon_refresh.png"></button>
+        <button class="icon-btn" title="系统管理" onclick="location.href='/admin'"><img src="/static/images/icons/icon_apps.png"></button>
+        <button class="icon-btn" title="退出" onclick="logout()"><img src="/static/images/icons/icon_logout.png"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <button onclick="selectedTarget=null;analysisTab=null;currentView=null;renderTargets();renderRightArea()"><img src="/static/images/icons/icon_home.png"><span>首页</span></button>
+    <button><img src="/static/images/icons/icon_edit.png"><span>办理</span></button>
+    <button><img src="/static/images/icons/icon_pin.png"><span>修改</span></button>
+    <button><img src="/static/images/icons/icon_share.png"><span>导出</span></button>
+    <button><img src="/static/images/icons/icon_print.png"><span>打印</span></button>
+    <button><img src="/static/images/icons/icon_target.png"><span>导航</span></button>
+    <button><img src="/static/images/icons/icon_lock.png"><span>锁定</span></button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header"><span>功能导航</span></div>
+      <div class="sidebar-search">
+        <button id="searchBtn" onclick="toggleSearchBox()"><img src="/static/images/icons/icon_search.png"><span>搜索选项</span></button>
+        <input type="text" id="sidebarSearchInput" placeholder="输入关键词搜索..." oninput="filterNav(this.value)" style="display:none">
+      </div>
+      <div class="sidebar-nav" id="sidebarNav"></div>
+      <div class="sidebar-bottom">
+        <button class="btn-update"><img src="/static/images/icons/icon_refresh.png"><span>版本更新</span></button>
+        <button class="btn-admin" onclick="location.href='/admin'"><img src="/static/images/icons/icon_apps.png"><span>系统管理</span></button>
+      </div>
+    </div>
+
+    <!-- Middle column -->
+    <div class="middle">
+      <div class="middle-map">
+        <div class="map-title">敌特分子活动情况图</div>
+        <div class="map-img"><img src="/static/images/enemy_flow_map.jpeg" alt="" onclick="showMapDetail()" style="cursor:pointer"></div>
+      </div>
+      <div class="target-list" id="targetList"></div>
+    </div>
+
+    <!-- Right area -->
+    <div class="right-area">
+      <!-- Map view (default) -->
+      <div id="mapView" class="map-main">
+        <img src="/static/images/target_map_v3.jpeg" alt="目标分布图">
+      </div>
+      <!-- Target detail -->
+      <div id="targetDetailView" class="target-detail hidden"></div>
+      <!-- Analysis view -->
+      <div id="analysisView" class="analysis-view hidden"></div>
+      <!-- Loading view -->
+      <div id="loadingView" class="loading-view hidden">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">正在分析，请稍候......</p>
+      </div>
+      <!-- Decision view -->
+      <div id="decisionView" class="decision-view hidden" style="display:none;flex-direction:column;height:100%;overflow:auto;padding:16px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for adding module -->
+<div id="addModuleModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h3>新增系统模块</h3>
+    <input type="text" id="moduleName" placeholder="模块名称">
+    <textarea id="moduleContent" placeholder="模块内容"></textarea>
+    <div class="modal-actions">
+      <button class="btn-military" onclick="closeModal()">取消</button>
+      <button class="btn-blue" onclick="saveModule()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image Zoom Modal -->
+<div id="imageModal" class="image-modal hidden" onclick="if(event.target===this)closeImageModal()">
+  <div class="image-modal-content">
+    <button class="image-modal-close" onclick="closeImageModal()">✕</button>
+    <div class="image-modal-body">
+      <img id="imageModalImg" src="" alt="">
+      <div class="image-modal-text">
+        <h2 id="imageModalTitle"></h2>
+        <p id="imageModalContent"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/data.js?v=20260603e"></script>
+<script src="/static/js/dashboard.js?v=20260603e"></script>
+</body>
+</html>

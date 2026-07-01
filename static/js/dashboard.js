@@ -820,8 +820,8 @@ function renderAnalysisGrid(el) {
         <img src="/static/images/zh_wojing.png">
         <button class="card-edit-btn" onclick="event.stopPropagation();startEditAnalysisCard('analysis_woqing','page1')" style="position:absolute;top:4px;right:4px;background:#1976d2;color:#fff;border:none;border-radius:3px;padding:4px 8px;font-size:0.7rem;cursor:pointer">编辑</button>
       </div>
-      <div class="card" onclick="analysisTab='analysis_detail';analysisSubTab='duibi';renderRightArea()" style="position:relative;background:linear-gradient(135deg,rgba(26,82,118,0.7),rgba(42,122,170,0.7)),url('/static/images/敌我能力对比.jpg');background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center">
-        <div style="font-size:3.2rem;font-weight:900;color:#ffd700;text-align:center;letter-spacing:2px;text-shadow:0 2px 8px rgba(0,0,0,0.5)">敌我能力对比</div>
+      <div class="card" onclick="analysisTab='analysis_detail';analysisSubTab='duibi';renderRightArea()" style="position:relative;container-type:inline-size;background:linear-gradient(135deg,rgba(26,82,118,0.7),rgba(42,122,170,0.7)),url('/static/images/敌我能力对比.jpg');background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center">
+        <div style="font-size:15cqw;font-weight:900;color:#ffd700;text-align:center;letter-spacing:0;white-space:nowrap;text-shadow:0 2px 8px rgba(0,0,0,0.5)">敌我能力对比</div>
         <button class="card-edit-btn" onclick="event.stopPropagation();startEditAnalysisCard('analysis_detail','duibi')" style="position:absolute;top:4px;right:4px;background:#1976d2;color:#fff;border:none;border-radius:3px;padding:4px 8px;font-size:0.7rem;cursor:pointer">编辑</button>
       </div>
       <div class="card" onclick="analysisTab='battlefield';analysisSubTab='ziran';renderRightArea()" style="position:relative">

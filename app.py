@@ -17,6 +17,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+try:
+    init_database()
+except Exception as e:
+    print(f'[Init] Database init failed: {e}')
+
 # ===== Auth Helpers =====
 def get_current_user():
     token = request.cookies.get('auth_token')
@@ -202,6 +207,40 @@ def api_upload():
     finally:
         db.close()
     return jsonify({'success': True, 'filename': filename})
+
+# ===== Key-Value Storage (DB-backed) =====
+@app.route('/api/storage', methods=['GET'])
+@login_required
+def api_get_storage():
+    db = get_db()
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT store_key, store_value FROM app_storage")
+        rows = cur.fetchall()
+    finally:
+        db.close()
+    return jsonify({'data': {r['store_key']: r['store_value'] for r in rows}})
+
+@app.route('/api/storage', methods=['POST'])
+@login_required
+def api_set_storage():
+    data = request.get_json()
+    key = data.get('key')
+    value = data.get('value')
+    if not key:
+        return jsonify({'error': '缺少key'}), 400
+    db = get_db()
+    try:
+        cur = db.cursor()
+        if value is None:
+            cur.execute("DELETE FROM app_storage WHERE store_key=%s", (key,))
+        else:
+            cur.execute("INSERT INTO app_storage (store_key, store_value) VALUES (%s, %s) "
+                        "ON DUPLICATE KEY UPDATE store_value=VALUES(store_value)", (key, value))
+        db.commit()
+    finally:
+        db.close()
+    return jsonify({'success': True})
 
 # ===== Speech Recognition =====
 def _find_model_dir():

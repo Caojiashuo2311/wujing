@@ -5,9 +5,9 @@ let analysisTab = null;       // null | 'enemy' | 'our' | 'battlefield' | 'analy
 let analysisSubTab = 'dite';
 let expandedNav = null;
 let currentView = null;
-let customModules = JSON.parse(localStorage.getItem('customAnalysisModules') || '[]');
-let customData = JSON.parse(localStorage.getItem('targetCustomData') || '{}');
-let analysisCustomData = JSON.parse(localStorage.getItem('analysisCustomData') || '{}');
+let customModules = [];
+let customData = {};
+let analysisCustomData = {};
 let editAnalysisImages = [];
 let editAnalysisSections = [];
 let typingTimer = null;
@@ -20,8 +20,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (data.user) { currentUser = data.user; document.getElementById('usernameDisplay').textContent = data.user.username; }
     else { location.href = '/login'; return; }
   } catch { location.href = '/login'; return; }
+  // Load persisted data from server (database)
+  await Store.load();
+  try { customModules = JSON.parse(Store.get('customAnalysisModules') || '[]'); } catch(e) { customModules = []; }
+  try { customData = JSON.parse(Store.get('targetCustomData') || '{}'); } catch(e) { customData = {}; }
+  try { analysisCustomData = JSON.parse(Store.get('analysisCustomData') || '{}'); } catch(e) { analysisCustomData = {}; }
   // Restore persisted plan documents
-  const savedPlan = localStorage.getItem('planDocuments');
+  const savedPlan = Store.get('planDocuments');
   if (savedPlan) { try { DATA.planDocuments = JSON.parse(savedPlan); } catch(e) {} }
   startClock();
   renderNav();
@@ -371,7 +376,7 @@ function saveEditTarget() {
   const title = document.getElementById('editTitle').value;
   const content = document.getElementById('editContent').value;
   customData[selectedTarget] = { title, content, images: editImages };
-  localStorage.setItem('targetCustomData', JSON.stringify(customData));
+  Store.set('targetCustomData', JSON.stringify(customData));
   renderTargetDetail();
 }
 
@@ -487,7 +492,7 @@ function saveEditAnalysisCard(tab, sub) {
   }
   
   analysisCustomData[key] = { title, content, images: editAnalysisImages };
-  localStorage.setItem('analysisCustomData', JSON.stringify(analysisCustomData));
+  Store.set('analysisCustomData', JSON.stringify(analysisCustomData));
   renderAnalysisGrid(document.getElementById('analysisView'));
 }
 
@@ -544,7 +549,7 @@ function saveEditAnalysisTitle() {
     analysisCustomData[key] = {};
   }
   analysisCustomData[key].title = newTitle;
-  localStorage.setItem('analysisCustomData', JSON.stringify(analysisCustomData));
+  Store.set('analysisCustomData', JSON.stringify(analysisCustomData));
   renderRightArea();
 }
 
@@ -765,7 +770,7 @@ function saveEditAnalysis() {
       images: sec.images,
     }));
     analysisCustomData[key] = { ...existing, sections };
-    localStorage.setItem('analysisCustomData', JSON.stringify(analysisCustomData));
+    Store.set('analysisCustomData', JSON.stringify(analysisCustomData));
     renderRightArea();
     return;
   }
@@ -774,7 +779,7 @@ function saveEditAnalysis() {
   const content = document.getElementById('editAnalysisContent').value;
   // Preserve existing tab title (set via "编辑名称"), only update content fields
   analysisCustomData[key] = { ...existing, contentTitle, content, images: editAnalysisImages };
-  localStorage.setItem('analysisCustomData', JSON.stringify(analysisCustomData));
+  Store.set('analysisCustomData', JSON.stringify(analysisCustomData));
   renderRightArea();
 }
 
@@ -959,9 +964,9 @@ function renderEnemyView(el) {
   if (!current) return;
 
   // Check if user uploaded custom content for this subTab
-  const userContent = localStorage.getItem('userSituationContent');
-  const userImage = localStorage.getItem('userSituationImage');
-  const userTargetSub = localStorage.getItem('userSituationTargetSub');
+  const userContent = Store.get('userSituationContent');
+  const userImage = Store.get('userSituationImage');
+  const userTargetSub = Store.get('userSituationTargetSub');
   
   // Check for custom analysis data
   const key = `${analysisTab}_${analysisSubTab}`;
@@ -1024,9 +1029,9 @@ function renderOurView(el) {
   const current = DATA.ourInfo[analysisSubTab] || items[0];
   const idx = subTabs.indexOf(analysisSubTab);
 
-  const userContent = localStorage.getItem('userSituationContent');
-  const userImage = localStorage.getItem('userSituationImage');
-  const userTargetSub = localStorage.getItem('userSituationTargetSub');
+  const userContent = Store.get('userSituationContent');
+  const userImage = Store.get('userSituationImage');
+  const userTargetSub = Store.get('userSituationTargetSub');
   const useCustom = userContent && userTargetSub === analysisSubTab;
   
   // Check for custom analysis data
@@ -1147,9 +1152,9 @@ function renderBattlefieldView(el) {
   const current = DATA.battlefieldEnv[analysisSubTab] || items[0];
   const idx = subTabs.indexOf(analysisSubTab);
 
-  const userContent = localStorage.getItem('userSituationContent');
-  const userImage = localStorage.getItem('userSituationImage');
-  const userTargetSub = localStorage.getItem('userSituationTargetSub');
+  const userContent = Store.get('userSituationContent');
+  const userImage = Store.get('userSituationImage');
+  const userTargetSub = Store.get('userSituationTargetSub');
   const useCustom = userContent && userTargetSub === analysisSubTab;
   
   // Check for custom analysis data
@@ -1657,7 +1662,7 @@ function planAddConfirm() {
   if (!title) { document.getElementById('planAddTitle').focus(); return; }
   const newId = String((DATA.planDocuments || []).length + 1).padStart(2, '0');
   DATA.planDocuments.push({ id: newId, title: title, seat: seat, time: time, count: count, status: status });
-  localStorage.setItem('planDocuments', JSON.stringify(DATA.planDocuments));
+  Store.set('planDocuments', JSON.stringify(DATA.planDocuments));
   document.getElementById('planAddModal').style.display = 'none';
   renderPlanPageView();
 }
@@ -2091,7 +2096,7 @@ function saveModule() {
   const content = document.getElementById('moduleContent').value.trim();
   if (!name) return;
   customModules.push({ id: 'mod_' + Date.now(), name, content });
-  localStorage.setItem('customAnalysisModules', JSON.stringify(customModules));
+  Store.set('customAnalysisModules', JSON.stringify(customModules));
   document.getElementById('moduleName').value = '';
   document.getElementById('moduleContent').value = '';
   closeModal();

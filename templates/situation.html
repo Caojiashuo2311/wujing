@@ -91,6 +91,7 @@
     </div>
   </div>
 </div>
+<script src="/static/js/store.js?v=20260702a"></script>
 <script src="/static/js/data.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', async () => {
@@ -99,14 +100,16 @@
       const d = await res.json();
       if (!d.user) { location.href='/login'; return; }
     } catch { location.href='/login'; return; }
-    document.getElementById('situationText').value = DATA.situationText;
+    await Store.load();
+    document.getElementById('situationText').value = Store.get('situationText') || DATA.situationText;
   });
 
   let uploadedPhotoBase64 = null;
 
-  function saveSituation() {
+  async function saveSituation() {
+    const saves = [];
     const text = document.getElementById('situationText').value;
-    localStorage.setItem('situationText', text);
+    saves.push(Store.set('situationText', text));
     // 使用 data.js 中的关键词库
     const keywordMap = DATA.keywordMap;
     let matchedTab = null, matchedSub = null;
@@ -120,14 +123,15 @@
       localStorage.setItem('autoAnalysisTab', matchedTab);
       localStorage.setItem('autoAnalysisSubTab', matchedSub);
       // Save user content + image for replacing matched section
-      localStorage.setItem('userSituationContent', text);
-      localStorage.setItem('userSituationTargetSub', matchedSub);
+      saves.push(Store.set('userSituationContent', text));
+      saves.push(Store.set('userSituationTargetSub', matchedSub));
       if (uploadedPhotoBase64) {
-        localStorage.setItem('userSituationImage', uploadedPhotoBase64);
+        saves.push(Store.set('userSituationImage', uploadedPhotoBase64));
       } else {
-        localStorage.removeItem('userSituationImage');
+        saves.push(Store.remove('userSituationImage'));
       }
     }
+    await Promise.all(saves);
     location.href = '/dashboard';
   }
 

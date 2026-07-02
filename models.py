@@ -37,6 +37,13 @@ def init_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS app_storage (
+            store_key VARCHAR(191) PRIMARY KEY,
+            store_value LONGTEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    """)
     # Insert default admin
     hashed = bcrypt.hashpw('WJLPSZHD'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     cur.execute("SELECT id FROM users WHERE username='WJLPSZHD'")
